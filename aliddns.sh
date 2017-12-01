@@ -2,29 +2,34 @@
 
 now=`date`
 
-aliddns_curl="curl -s whatismyip.akamai.com"
+aliddns_ak="AccessKeyId"
+aliddns_sk="AccessKeySecret"
+aliddns_curl="curl -s http://members.3322.org/dyndns/getip"
 aliddns_dns="223.5.5.5"
 aliddns_ttl="600"
+aliddns_domain="domainname"
+aliddns_name="domainrecord"
+
 
 ip=`$aliddns_curl 2>&1` || die "$ip"
 
 #support @ record nslookup
 if [ "$aliddns_name" = "@" ]
 then
-  current_ip=`nslookup $aliddns_domain $aliddns_dns 2>&1`
+  current_ip_info=`nslookup $aliddns_domain $aliddns_dns 2>&1`
 else
-  current_ip=`nslookup $aliddns_name.$aliddns_domain $aliddns_dns 2>&1`
+  current_ip_info=`nslookup $aliddns_name.$aliddns_domain $aliddns_dns 2>&1`
 fi
 
-if [ "$?" -eq "0" ]
-then
-    current_ip=`echo "$current_ip" | grep 'Address 1' | tail -n1 | awk '{print $NF}'`
+#if [ "$?" -eq "0" ]
+#then
+    current_ip=`echo "$current_ip_info" | grep ^Address | tail -n1 | awk -F\: '{print $NF}' | awk '{print $1}'`
 
-    if [ "$ip" = "$current_ip" ]
-    then
-        echo "skipping"
-        exit 0
-    fi 
+if [ "$ip" = "$current_ip" ]
+  then
+    echo "skipping"
+    exit 0
+fi 
 
 
 
@@ -86,6 +91,7 @@ if [ "$aliddns_record_id" = "" ]
 then
     aliddns_record_id=`query_recordid | get_recordid`
 fi
+
 if [ "$aliddns_record_id" = "" ]
 then
     aliddns_record_id=`add_record | get_recordid`
